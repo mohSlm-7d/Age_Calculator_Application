@@ -4,7 +4,6 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.*
-import androidx.core.view.isVisible
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -14,11 +13,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val month_spinner: Spinner = findViewById(R.id.Month_spinner)
-        val day_spinner: Spinner = findViewById(R.id.Day_spinner)
+        val day_spinner: Spinner = findViewById(R.id.day_spinner)
         val year_spinner: Spinner = findViewById(R.id.Year_spinner)
         val calc_Button: Button = findViewById(R.id.Calculate_button)
-        val result_textView: TextView = findViewById(R.id.Result_textView)
-
+        val result_textView:TextView = findViewById(R.id.result_textView)
 
         val current_date = LocalDate.now()
         var month: Int = 0
@@ -27,6 +25,13 @@ class MainActivity : AppCompatActivity() {
 
         var no_of_days_inMonth: Int = 0
         var day_options: Array<String>
+        day_options = arrayOf("Select a month")
+        day_spinner.adapter = ArrayAdapter<String>(
+            this,
+            android.R.layout.simple_list_item_1,
+            day_options
+        )
+
         var thisRef = this
 
         val month_options = arrayOf(
@@ -65,14 +70,33 @@ class MainActivity : AppCompatActivity() {
                     12 -> 31
                     else -> 0
                 }
-                if (year != 0 && month != 0) {
+
+                if (year != 0 || month != 2){
                     day_options = fill_daysList(no_of_days_inMonth)
                     day_spinner.adapter = ArrayAdapter<String>(
                         thisRef,
                         android.R.layout.simple_list_item_1,
                         day_options
                     )
-                    day_spinner.isVisible = true;
+
+                }
+                if(month == 2 && year == 0){
+                    result_textView.text = "Please choose a year!"
+                }
+                else{
+                    if(day == 0){
+                        result_textView.text = "Please choose a day"
+                    }
+                    if(year == 0){
+                        if(day != 0)
+                            result_textView.text = result_textView.text.toString() + " Please choose a year"
+                        else
+                            result_textView.text = result_textView.text.toString() + ", and a year"
+                    }
+                    result_textView.text = result_textView.text.toString() + "!"
+                }
+                if(month != 0 && day != 0 && year != 0){
+                    result_textView.text = "Your birth date is: ${month}/${day}/${year}"
                 }
             }
 
@@ -105,7 +129,7 @@ class MainActivity : AppCompatActivity() {
                 if (p2 != 0)
                     year = year_options.get(p2).toString().toInt()
                 else
-                    year = 1899
+                    year = 0
 
                 if (month == 2) {
                     if (year % 4 == 0) {
@@ -119,7 +143,20 @@ class MainActivity : AppCompatActivity() {
                         android.R.layout.simple_list_item_1,
                         day_options
                     )
-                    day_spinner.isVisible = true;
+
+                }
+                if(month == 0){
+                    result_textView.text = "Please choose a month!"
+                }
+                else if(day == 0){
+                    result_textView.text = "Please choose a day"
+                    if(year == 0)
+                        result_textView.text = result_textView.text.toString() + ", and a year "
+                    result_textView.text = result_textView.text.toString() + "!"
+                }
+
+                if(month != 0 && day != 0 && year != 0){
+                    result_textView.text = "Your birth date is: ${month}/${day}/${year}"
                 }
             }
 
@@ -134,6 +171,13 @@ class MainActivity : AppCompatActivity() {
         day_spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
                 day = p2
+
+                if(day != 0 && year == 0){
+                    result_textView.text = "Please choose a year!"
+                }
+                if(month != 0 && day != 0 && year != 0){
+                    result_textView.text = "Your birth date is: ${month}/${day}/${year}"
+                }
             }
 
             override fun onNothingSelected(p0: AdapterView<*>?) {
@@ -142,6 +186,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         calc_Button.setOnClickListener {
+            result_textView.text= if(day ==0) "Please enter a day" else if(month == 0) "Please enter a month" else "Please enter a year"
             if (month != 0 && year != 0 && day != 0) {
                 var diff_in_years: Int = current_year.toInt() - year.toInt()
                 var diff_in_months: Int =current_date.monthValue - month.toInt()
@@ -150,15 +195,15 @@ class MainActivity : AppCompatActivity() {
                 if (diff_in_months < 0 || diff_in_days < 0) {
                     if (diff_in_months < 0) {
                         diff_in_months = 12 - diff_in_months * (-1)
+                        diff_in_years = diff_in_years - 1
                     }
                     if (diff_in_days < 0) {
-                        diff_in_days = 30 - diff_in_days * (-1)
+                        diff_in_days = no_of_days_inMonth - diff_in_days * (-1)
+                        diff_in_months = diff_in_months - 1
                     }
-                    diff_in_years = diff_in_years - 1
-                }
-                /*else if(diff_in_months > 0){
 
-                }*/
+                }
+
                 var resultText: String = ""
                 if (diff_in_years != 0) {
                     resultText = resultText + "Your age is ${diff_in_years} year"
@@ -178,25 +223,35 @@ class MainActivity : AppCompatActivity() {
                     resultText = resultText + "s"
                 resultText = resultText + "."
 
+                resultText += "\nYour age in months is ${diff_in_years * 12 + diff_in_months} month"
+                if(diff_in_years*12 + diff_in_months > 1){
+                    resultText+= "s"
+                }
+                resultText+=".\nYour age in days is ${diff_in_years*365 + diff_in_months*30} day"
+                if(diff_in_years*365 + diff_in_months*30 > 1){
+                    resultText+= "s"
+                }
+                resultText+=".\nYour age in hours is ${diff_in_years*365*24 + diff_in_months*30*24 + diff_in_days*24} hours"
+                resultText+=".\nYour age in minutes is ${diff_in_years*365*24*60 + diff_in_months*30*24*60 + diff_in_days*24*60} minutes"
+                resultText+=".\nYour age in seconds is ${diff_in_years*365*24*60*60 + diff_in_months*30*24*60*60 + diff_in_days*24*60*60} seconds."
+
                 result_textView.text = resultText;
 
-
-                //result_textView.text = "The month: ${diff_in_months.toString()} \n day is ${diff_in_days.toString()} \n year is ${diff_in_years.toString()}"
             }
         }
     }
 
     private fun fill_daysList(no_of_days:Int):Array<String>{
         val list = arrayOfNulls<String>(no_of_days + 1)
-        var day = 0
+        var dayVal = 0
         for(i in list.indices){
-            if(day == 0){
+            if(dayVal == 0){
                 list[i] ="Select a day"
-                day++
+                dayVal++
                 continue
             }
-            list[i] = day.toString()
-            day++
+            list[i] = dayVal.toString()
+            dayVal++
         }
         return list.requireNoNulls()
     }
